@@ -16,33 +16,36 @@ This project is a simple in-memory database similar to Redis, implemented in C. 
 
 ## Setup
 
-1. **Clone the Repository**:
-   ```bash
-   git clone https://github.com/furkanhaydari/mini-redis.git
-   cd mini-redis
-2. **Compile the Server:** This command compiles the source files and links them to create the executable.
+1.  **Clone the Repository**:
+    ```bash
+    git clone https://github.com/furkanhaydari/mini-redis.git
+    cd mini-redis
+    ```
+2.  **Compile the Server:** This command compiles the source files and links them to create the executable.
+
     ```bash
     make
     ```
 
-3. **Run the Server:** This command builds the project (if not already built) and then runs the executable.
+3.  **Run the Server:** This command builds the project (if not already built) and then runs the executable.
 
-    ```bash
-    make run
-    ```
-Or you can simply use:
+        ```bash
+        make run
+        ```
 
-    ```bash
-    ./mini-redis
-    ```
+    Or you can simply use:
 
-4. **Clean Build Artifacts:** This command removes object files and the executable to clean the build environment.
+        ```bash
+        ./mini-redis
+        ```
+
+4.  **Clean Build Artifacts:** This command removes object files and the executable to clean the build environment.
 
     ```bash
     make clean
     ```
 
-4. **Run the Tests:** You can run various tests using the `tests/tesy.py` file. Works with Python 3:
+5.  **Run the Tests:** You can run various tests using the `tests/tesy.py` file. Works with Python 3:
 
     ```bash
     python3 tests/tesy.py
@@ -52,25 +55,29 @@ Or you can simply use:
 
 The Python client interacts with the server using the following commands:
 
-
 ### Example Commands
 
 - **SET key value**: Adds a key-value pair to the database.
-    ```python
-    send_command("SET key value")
-    ```
+
+  ```python
+  send_command("SET key value")
+  ```
+
 - **GET key**: Retrieves the value of a specific key from the database.
-    ```python
-    send_command("GET key")
-    ```
+
+  ```python
+  send_command("GET key")
+  ```
+
 - **DEL key**: Deletes a specific key from the database.
-    ```python
-    send_command("DEL key")
-    ```
+
+  ```python
+  send_command("DEL key")
+  ```
 
 ### Syslog and Circular Buffer
 
-The server logs all operations using syslog. Logging is managed with a circular buffer, allowing for efficient cyclic management of log data and quick access to historical log information.
+The server logs all operations using syslog if the -s argument is provided. Otherwise, it logs to the console. Logging is managed with a circular buffer, which enables efficient cyclic management of log data and quick access to historical log information.
 
 ## Tests
 
@@ -96,6 +103,6 @@ Feel free to contribute by opening issues or submitting pull requests.
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## İletişim
+## Contact
 
 Furkan Haydari - [LinkedIn](https://www.linkedin.com/in/furkan-haydari/) - [Email](mailto:furkanhydri@gmail.com)
