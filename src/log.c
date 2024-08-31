@@ -14,7 +14,7 @@
 extern int use_syslog;
 static CircularBuffer log_buffer;
 
-void _log_info(const char *file, int line, const char *func, const char *format, ...) {
+void _log_message(const char *level, const char *file, int line, const char *func, const char *format, ...) {
     char formatted_message[BUFFER_SIZE];
     va_list args;
     va_start(args, format);
@@ -22,30 +22,12 @@ void _log_info(const char *file, int line, const char *func, const char *format,
     va_end(args);
 
     char log_message[MAX_LOG_SIZE];
-    snprintf(log_message, sizeof(log_message), "[INFO] %s:%d:%s: %s\n", file, line, func, formatted_message);
-    
+    snprintf(log_message, sizeof(log_message), "[%s] %s:%d:%s: %s\n", level, file, line, func, formatted_message);
+
     if (use_syslog) {
         buffer_write(&log_buffer, log_message);
     } else {
         printf("%s", log_message);
-    }
-}
-
-void _log_error(const char *file, int line, const char *func, const char *format, ...) {
-    char formatted_message[BUFFER_SIZE];
-    va_list args;
-    va_start(args, format);
-    vsnprintf(formatted_message, sizeof(formatted_message), format, args);
-    va_end(args);
-
-    char log_message[MAX_LOG_SIZE];
-    snprintf(log_message, sizeof(log_message), "[ERROR] %s:%d:%s: %s\n", file, line, func, formatted_message);
-    
-    if (use_syslog) {
-        buffer_write(&log_buffer, log_message);
-    } else {
-        snprintf(log_message, sizeof(log_message), "[ERROR] %s:%d:%s: %s\n", file, line, func, formatted_message);
-
     }
 }
 
