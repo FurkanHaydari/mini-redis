@@ -83,6 +83,39 @@ int start_server(int base_port) {
     return server_socket;
 }
 
+void handle_set_command(int client_socket, char *key, char *value) {
+    if (db_set(key, value) == 0) {
+        send(client_socket, "OK\n", 3, 0);
+        log_info("SET command successful for key: %s and value: %s", key, value);
+    } else {
+        send(client_socket, "ERROR\n", 6, 0);
+        log_error("SET command failed for key: %s and value: %s", key, value);
+    }
+}
+
+void handle_get_command(int client_socket, char *key) {
+    char *value = db_get(key);
+    if (value) {
+        send(client_socket, value, strlen(value), 0);
+        send(client_socket, "\n", 1, 0);
+        log_info("GET command successful for key: %s and value: %s", key, value);
+    } else {
+        send(client_socket, "Not Found\n", 10, 0);
+        log_info("GET command: key not found %s", key);
+    }
+}
+
+void handle_del_command(int client_socket, char *key) {
+    if (db_delete(key) == 0) {
+        send(client_socket, "Deleted\n", 8, 0);
+        log_info("DEL command successful for key: %s", key);
+    } else {
+        send(client_socket, "ERROR\n", 6, 0);
+        log_error("DEL command failed for key: %s", key);
+    }
+}
+
+
 void handle_client(int client_socket) {
     char buffer[BUFFER_SIZE];
     ssize_t bytes_received;
@@ -95,43 +128,20 @@ void handle_client(int client_socket) {
         log_info("Received command: %s", buffer);
 
         if (strncmp(buffer, "SET ", 4) == 0) {
-            // Handle SET command
             char *key = strtok(buffer + 4, " ");
             char *value = strtok(NULL, "\r\n");
             if (key && value) {
-                if (db_set(key, value) == 0) {
-                    send(client_socket, "OK\n", 3, 0);
-                    log_info("SET command successful for key: %s and value: %s", key, value);
-                } else {
-                    send(client_socket, "ERROR\n", 6, 0);
-                    log_error("SET command failed for key: %s and value: %s", key, value);
-                }
+                handle_set_command(client_socket, key, value);
             } else {
                 send(client_socket, "ERROR\n", 6, 0);
                 log_error("SET command malformed");
             }
         } else if (strncmp(buffer, "GET ", 4) == 0) {
-            // Handle GET command
             char *key = strtok(buffer + 4, "\r\n");
-            char *value = db_get(key);
-            if (value) {
-                send(client_socket, value, strlen(value), 0);
-                send(client_socket, "\n", 1, 0);
-                log_info("GET command successful for key: %s and value: %s", key, value);
-            } else {
-                send(client_socket, "Not Found\n", 10, 0);
-                log_info("GET command: key not found %s", key);
-            }
+            handle_get_command(client_socket, key);
         } else if (strncmp(buffer, "DEL ", 4) == 0) {
-            // Handle DEL command
             char *key = strtok(buffer + 4, "\r\n");
-            if (db_delete(key) == 0) {
-                send(client_socket, "Deleted\n", 8, 0);
-                log_info("DEL command successful for key: %s", key);
-            } else {
-                send(client_socket, "ERROR\n", 6, 0);
-                log_error("DEL command failed for key: %s", key);
-            }
+            handle_del_command(client_socket, key);
         } else {
             send(client_socket, "ERROR: Unsupported command\n", 27, 0);
             log_error("Unsupported command received: %s", buffer);
