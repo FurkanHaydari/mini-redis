@@ -1,4 +1,5 @@
 #include "database.h"
+#include "log.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -38,8 +39,10 @@ char* db_get(const char *key) {
             return current->value;
         }
     }
+    log_info("Key not found: %s", key);
     return NULL;
 }
+
 int db_delete(const char *key) {
     if (key == NULL) return -1;
     root = delete_node(root, key);
@@ -63,6 +66,7 @@ static int max(int a, int b) {
 static KeyValue* create_node(const char *key, const char *value) {
     KeyValue *node = (KeyValue *)malloc(sizeof(KeyValue));
     if (!node) {
+        log_error("Memory allocation failed");
         return NULL;
     }
     strncpy(node->key, key, MAX_KEY_SIZE);
