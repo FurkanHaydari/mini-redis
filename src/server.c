@@ -4,17 +4,17 @@
 #include <string.h>
 #include <unistd.h>
 #include <arpa/inet.h>
-#include <errno.h> // For errno
+#include <errno.h>
+#include <json-c/json.h>
 #include "server.h"
 #include "log.h"
 #include "database.h"
+#include "config.h"
 
-#define MAX_PORT_TRIES 10
-#define BUFFER_SIZE 1024
 
 int server_socket = -1;
 
-void init(){
+void init() {
     db_init();
     log_init();
 }
@@ -36,7 +36,6 @@ void signal_handler(int signum) {
 }
 
 int start_server(int base_port) {
-    int server_socket;
     struct sockaddr_in server_addr;
     int port = base_port;
     int port_found = 0;
@@ -55,7 +54,7 @@ int start_server(int base_port) {
 
         // Log port number
         log_info("Trying port: %d", port);
-        fprintf(stderr,"Actual port: %d\n",port);
+        fprintf(stderr, "Actual port: %d\n", port);
 
         if (bind(server_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) == 0) {
             port_found = 1;
@@ -83,8 +82,10 @@ int start_server(int base_port) {
     return server_socket;
 }
 
-void handle_set_command(int client_socket, char *key, char *value) {
-    if (db_set(key, value) == 0) {
+void handle_set_command(int client_socket, const char *key, const char *value) {
+    // Create a JSON object from the value string
+    json_object *json_value = json_object_new_string(value);
+    if (db_set(key, json_value) == 0) {
         send(client_socket, "OK\n", 3, 0);
         log_info("SET command successful for key: %s and value: %s", key, value);
     } else {
@@ -93,19 +94,20 @@ void handle_set_command(int client_socket, char *key, char *value) {
     }
 }
 
-void handle_get_command(int client_socket, char *key) {
-    char *value = db_get(key);
-    if (value) {
-        send(client_socket, value, strlen(value), 0);
-        send(client_socket, "\n", 1, 0);
-        log_info("GET command successful for key: %s and value: %s", key, value);
+void handle_get_command(int client_socket, const char *key) {
+    json_object *value_obj = db_get(key);
+    if (value_obj) {
+        const char *value_str = json_object_to_json_string(value_obj); // Convert JSON object to string
+        send(client_socket, value_str, strlen(value_str), 0);
+        send(client_socket, "\n", 1, 0); // Optional: send newline character for better formatting
+        log_info("GET command successful for key: %s and value: %s", key, value_str);
     } else {
         send(client_socket, "Not Found\n", 10, 0);
         log_info("GET command: key not found %s", key);
     }
 }
 
-void handle_del_command(int client_socket, char *key) {
+void handle_del_command(int client_socket, const char *key) {
     if (db_delete(key) == 0) {
         send(client_socket, "Deleted\n", 8, 0);
         log_info("DEL command successful for key: %s", key);
@@ -115,44 +117,63 @@ void handle_del_command(int client_socket, char *key) {
     }
 }
 
-
 void handle_client(int client_socket) {
     char buffer[BUFFER_SIZE];
-    ssize_t bytes_received;
+    int bytes_received = recv(client_socket, buffer, BUFFER_SIZE, 0);
 
-    log_info("Client connected: socket %d", client_socket);
+    if (bytes_received > 0) {
+        buffer[bytes_received] = '\0';  // Null terminate the string
+        log_info("Received data: %s\n", buffer);
 
-    while ((bytes_received = recv(client_socket, buffer, sizeof(buffer) - 1, 0)) > 0) {
-        buffer[bytes_received] = '\0';  // Add null terminator
+        // Parse JSON
+        struct json_object *parsed_json;
+        struct json_object *key_obj;
+        struct json_object *operation_obj;
+        struct json_object *value_obj;
 
-        log_info("Received command: %s", buffer);
-
-        if (strncmp(buffer, "SET ", 4) == 0) {
-            char *key = strtok(buffer + 4, " ");
-            char *value = strtok(NULL, "\r\n");
-            if (key && value) {
-                handle_set_command(client_socket, key, value);
-            } else {
-                send(client_socket, "ERROR\n", 6, 0);
-                log_error("SET command malformed");
-            }
-        } else if (strncmp(buffer, "GET ", 4) == 0) {
-            char *key = strtok(buffer + 4, "\r\n");
-            handle_get_command(client_socket, key);
-        } else if (strncmp(buffer, "DEL ", 4) == 0) {
-            char *key = strtok(buffer + 4, "\r\n");
-            handle_del_command(client_socket, key);
-        } else {
-            send(client_socket, "ERROR: Unsupported command\n", 27, 0);
-            log_error("Unsupported command received: %s", buffer);
+        parsed_json = json_tokener_parse(buffer);
+        if (parsed_json == NULL) {
+            log_error("Failed to parse JSON\n");
+            send(client_socket, "ERROR: Invalid JSON", 19, 0);
+            close(client_socket);
+            return;
         }
-    }
 
-    if (bytes_received < 0) {
-        log_error("Error receiving data from socket %d", client_socket);
-    }
+        json_object_object_get_ex(parsed_json, "key", &key_obj);
+        json_object_object_get_ex(parsed_json, "operation", &operation_obj);
+        json_object_object_get_ex(parsed_json, "value", &value_obj);
 
-    log_info("Client disconnected: socket %d", client_socket);
+        const char *key_str = json_object_get_string(key_obj);
+        const char *op_str = json_object_get_string(operation_obj);
+
+        if (key_str == NULL || op_str == NULL) {
+            log_error("Key or operation missing in JSON\n");
+            send(client_socket, "ERROR: Key or operation missing", 31, 0);
+            close(client_socket);
+            json_object_put(parsed_json);
+            return;
+        }
+
+        // Handle operation
+        if (strcmp(op_str, "GET") == 0) {
+            handle_get_command(client_socket, key_str);
+        } else if (strcmp(op_str, "DEL") == 0) {
+            handle_del_command(client_socket, key_str);
+        } else if (strcmp(op_str, "SET") == 0) {
+
+            json_object_object_get_ex(parsed_json, "value", &value_obj);
+            const char *value_str = json_object_get_string(value_obj);
+            handle_set_command(client_socket, key_str, value_str);
+
+        } else {
+            log_error("Unknown operation\n");
+            send(client_socket, "ERROR: Unknown operation", 25, 0);
+        }
+        json_object_put(parsed_json);
+    } else {
+        log_error("Failed to receive data\n");
+        send(client_socket, "ERROR: Failed to receive data", 30, 0);
+    }
     close(client_socket);
 }
 
@@ -170,16 +191,12 @@ void accept_connections() {
 
         client_socket = accept(server_socket, (struct sockaddr *)&client_addr, &client_len);
         if (client_socket < 0) {
-            log_error("Accept error: %s", strerror(errno));
-            // Exit loop on critical error
-            break;
+            log_error("Client accept failed: %s", strerror(errno));
+            continue;
         }
-        // const char *client_ip = inet_ntoa(client_addr.sin_addr);
-        // fprintf(stderr,"LAN: %s",client_ip);
-        // log_info("New connection: %s", client_ip);
         handle_client(client_socket);
-        close(client_socket);
     }
+    close(client_socket);
     log_info("Server is shutting down, performing clean-up...");
     cleanup();
 }

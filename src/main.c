@@ -8,8 +8,9 @@
 #include "log.h"
 #include <stdbool.h>
 #include "database.h"
+#include "config.h"
 
-#define PORT 45234
+
 int use_syslog = 0;
 
 void init();
