@@ -10,38 +10,44 @@
 #include "database.h"
 #include "config.h"
 
-
 int use_syslog = 0;
 
 void init();
 void cleanup();
 
-void parse_arguments(int argc, char *argv[]) {
+void parse_arguments(int argc, char *argv[])
+{
     int opt;
 
-    while ((opt = getopt(argc, argv, "s")) != -1) {
-        switch (opt) {
-            case 's':
-                use_syslog = 1; // Use syslog
-                break;
-            default:
-                fprintf(stderr, "Usage: %s [-s]\n", argv[0]);
-                exit(EXIT_FAILURE);
+    while ((opt = getopt(argc, argv, "s")) != -1)
+    {
+        switch (opt)
+        {
+        case 's':
+            use_syslog = 1; // Use syslog
+            break;
+        default:
+            fprintf(stderr, "Usage: %s [-s]\n", argv[0]);
+            exit(EXIT_FAILURE);
         }
     }
 }
 
 extern int server_socket;
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
     // Initialize logging
     parse_arguments(argc, argv);
-    
+
     init();
 
-    if (use_syslog) {
+    if (use_syslog)
+    {
         openlog("mini-redis", LOG_PID | LOG_CONS, LOG_USER);
         fprintf(stderr, "Logging directed to syslog.");
-    } else {
+    }
+    else
+    {
         fprintf(stderr, "Logging directed to the console.");
     }
     // Set up signal handlers
@@ -49,13 +55,14 @@ int main(int argc, char *argv[]) {
     signal(SIGTERM, signal_handler);
 
     server_socket = start_server(PORT);
-    if (server_socket < 0) {
+    if (server_socket < 0)
+    {
         log_error("Server could not be started.");
         return EXIT_FAILURE;
     }
 
     log_info("Starting...");
-    accept_connections();  // Accept connections
+    accept_connections(); // Accept connections
     cleanup();
 
     return EXIT_SUCCESS;
