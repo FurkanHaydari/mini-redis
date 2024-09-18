@@ -9,95 +9,114 @@ This project is a simple in-memory database similar to Redis, implemented in C. 
 - **In-Memory Database**: Implements a simple in-memory database with basic CRUD operations.
 - **AVL Tree Structure**: Utilizes an AVL tree structure for data storage, ensuring balanced and fast data access.
 - **Socket Programming**: Employs TCP/IP sockets for data exchange between the server and client.
-- **Client Implementation**: A simple Redis client is implemented in Python, allowing for connection to the database and testing of data operations.
-- **Logging**: Efficient logging and data tracking are achieved using syslog and a circular buffer for server log management.
+- **Client Implementation**: A simple Redis client is implemented in Python for testing data operations.
+- **Logging**: Efficient logging using syslog or console logging, with a circular buffer for server log management.
 - **Fault Tolerance Testing**: Tests for server stability and fault tolerance.
 - **Performance Testing**: Measures performance and memory usage.
 
-## Setup
+## Setup and Usage
 
-1.  **Clone the Repository**:
-    ```bash
-    git clone https://github.com/furkanhaydari/mini-redis.git
-    cd mini-redis
-    ```
-2.  **Compile the Server:** This command compiles the source files and links them to create the executable.
+### Using Docker (Recommended)
 
-    ```bash
-    make
-    ```
+1. **Build the Docker image:**
 
-3.  **Run the Server:** This command builds the project (if not already built) and then runs the executable.
+   ```bash
+   make docker-build
+   ```
 
-        ```bash
-        make run
-        ```
+2. **Run tests in Docker:**
 
-    Or you can simply use:
+   ```bash
+   make docker-test
+   ```
 
-        ```bash
-        ./mini-redis
-        ```
+3. **Run the server in Docker:**
+   ```bash
+   docker run -p 45234:45234 mini-redis
+   ```
 
-4.  **Clean Build Artifacts:** This command removes object files and the executable to clean the build environment.
+### Manual Setup
 
-    ```bash
-    make clean
-    ```
+1. **Compile the Server:**
 
-5.  **Run the Tests:** You can run various tests using the `tests/tesy.py` file. Works with Python 3:
+   ```bash
+   make
+   ```
 
-    ```bash
-    python3 tests/tesy.py
-    ```
+2. **Run the Server:**
 
-## Client Usage
+   ```bash
+   ./mini-redis [-p port] [-i] [-s]
+   ```
 
-The Python client interacts with the server using the following commands:
+   - `-p port`: Specify the port number (default is 45234)
+   - `-i`: Set log level to INFO (default is ERROR)
+   - `-s`: Use syslog for logging (default is console logging)
 
-### Example Commands
+3. **Run Tests:**
 
-- **SET key value**: Adds a key-value pair to the database.
+   ```bash
+   make test
+   ```
 
-  ```python
-  send_command("SET key value")
-  ```
+4. **Clean Build Artifacts:**
+   ```bash
+   make clean
+   ```
 
-- **GET key**: Retrieves the value of a specific key from the database.
+## API Usage
 
-  ```python
-  send_command("GET key")
-  ```
+The server accepts JSON-formatted commands. Here are the basic operations:
 
-- **DEL key**: Deletes a specific key from the database.
+### SET
 
-  ```python
-  send_command("DEL key")
-  ```
+Adds a key-value pair to the database.
 
-### Syslog and Circular Buffer
+```json
+{"key": "mykey", "operation": "SET", "value": "myvalue"}
+```
 
-The server logs all operations using syslog if the -s argument is provided. Otherwise, it logs to the console. Logging is managed with a circular buffer, which enables efficient cyclic management of log data and quick access to historical log information.
+### GET
 
-## Tests
+Retrieves the value of a specific key from the database.
+
+```json
+{"key": "mykey", "operation": "GET"}
+```
+
+### DEL
+
+Deletes a specific key from the database.
+
+```json
+{"key": "mykey", "operation": "DEL"}
+```
+
+## Testing
 
 The project includes various tests:
 
-- **Basic Operations**: Tests the correct functionality of the SET, GET, and DEL commands.
-- **Resize AVL Tree**: Tests the AVL tree resizing and ensures data integrity by adding and retrieving multiple keys.
-- **Memory Leak**: Checks for memory leaks using `tracemalloc`.
-- **Performance**: Measures the time required to perform a large number of SET operations.
-- **Connection Handling**: Simulates multiple concurrent clients to test connection handling and server stability.
-- **Fault Tolerance**: Tests server behavior under connection loss and network delay scenarios.
+- Basic CRUD operations
+- AVL tree resizing and data integrity
+- Memory leak detection
+- Performance measurement
+- Fault tolerance
+- Randomized operations
+
+Tests are automatically run in a Docker container to ensure a consistent environment and prevent system interference. You can run the tests using:
+
+```bash
+make docker-test
+```
 
 ## Advanced Topics
 
-- **SQL Parser**: Future enhancements include implementing an SQL parser and exploring Abstract Syntax Tree (AST) for query processing.
+- **SQL Parser**: Future plans include implementing an SQL parser and exploring Abstract Syntax Tree (AST) for query processing.
 - **Synchronization Mechanisms**: Plans to explore synchronization mechanisms and PostgreSQL for advanced database functionalities.
 
 ## Contributions
 
-Feel free to contribute by opening issues or submitting pull requests.
+Contributions are welcome. Please feel free to submit a Pull Request.
 
 ## License
 

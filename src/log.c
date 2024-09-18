@@ -7,31 +7,43 @@
 #include <string.h>
 #include <syslog.h>
 #include <errno.h>
+#include <time.h>
 
 #define MAX_LOG_SIZE 2048
 #define BUFFER_SIZE 1024
 
 extern int use_syslog;
 static CircularBuffer log_buffer;
+int current_log_level = LOG_LEVEL_ERROR;
+
+void set_log_level(int level)
+{
+    current_log_level = level;
+}
 
 void _log_message(const char *level, const char *file, int line, const char *func, const char *format, ...)
 {
-    char formatted_message[BUFFER_SIZE];
     va_list args;
+    char message[1024];
+    char timestamp[20];
+    time_t now = time(NULL);
+    strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", localtime(&now));
+
     va_start(args, format);
-    vsnprintf(formatted_message, sizeof(formatted_message), format, args);
+    vsnprintf(message, sizeof(message), format, args);
     va_end(args);
 
-    char log_message[MAX_LOG_SIZE];
-    snprintf(log_message, sizeof(log_message), "[%s] %s:%d:%s: %s\n", level, file, line, func, formatted_message);
+    char full_message[2048];
+    snprintf(full_message, sizeof(full_message), "[%s] %s %s:%d %s(): %s\n",
+             timestamp, level, file, line, func, message);
 
     if (use_syslog)
     {
-        buffer_write(&log_buffer, log_message);
+        syslog(LOG_INFO, "%s", full_message);
     }
     else
     {
-        printf("%s", log_message);
+        fprintf(stderr, "%s", full_message);
     }
 }
 

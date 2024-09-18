@@ -1,9 +1,10 @@
 #ifndef CIRCULAR_BUFFER_H
 #define CIRCULAR_BUFFER_H
 
-#include <stddef.h>  // For size_t definition 
+#include <stddef.h> // For size_t definition
 
-typedef struct {
+typedef struct
+{
     char *buffer;
     size_t size;
     size_t head;

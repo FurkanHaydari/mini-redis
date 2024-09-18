@@ -61,7 +61,6 @@ int start_server(int base_port)
 
         // Log port number
         log_info("Trying port: %d", port);
-        fprintf(stderr, "Actual port: %d\n", port);
 
         if (bind(server_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) == 0)
         {
