@@ -1,3 +1,6 @@
+// server.c - Server implementation for the Mini-Redis project
+// This file contains functions for server initialization, connection handling, and command processing
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -13,12 +16,14 @@
 
 int server_socket = -1;
 
+// Initialize the server components
 void init()
 {
     db_init();
     log_init();
 }
 
+// Clean up server resources
 void cleanup()
 {
     if (server_socket != -1)
@@ -26,10 +31,11 @@ void cleanup()
         close(server_socket);
     }
     db_cleanup();
-    log_cleanup(); // Clean up logging
+    log_cleanup();
     exit(EXIT_SUCCESS);
 }
 
+// Handle signals for graceful shutdown
 void signal_handler(int signum)
 {
     if (signum == SIGINT || signum == SIGTERM)
@@ -39,12 +45,14 @@ void signal_handler(int signum)
     }
 }
 
+// Start the server and bind to a port
 int start_server(int base_port)
 {
     struct sockaddr_in server_addr;
     int port = base_port;
     int port_found = 0;
 
+    // Try to bind to a port within the allowed range
     while (port < base_port + MAX_PORT_TRIES)
     {
         server_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -59,7 +67,6 @@ int start_server(int base_port)
         server_addr.sin_addr.s_addr = INADDR_ANY;
         server_addr.sin_port = htons(port);
 
-        // Log port number
         log_info("Trying port: %d", port);
 
         if (bind(server_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) == 0)
@@ -93,9 +100,9 @@ int start_server(int base_port)
     return server_socket;
 }
 
+// Handle SET command: Store a key-value pair in the database
 void handle_set_command(int client_socket, const char *key, const char *value)
 {
-    // Create a JSON object from the value string
     json_object *json_value = json_object_new_string(value);
     if (db_set(key, json_value) == 0)
     {
@@ -109,14 +116,15 @@ void handle_set_command(int client_socket, const char *key, const char *value)
     }
 }
 
+// Handle GET command: Retrieve a value from the database
 void handle_get_command(int client_socket, const char *key)
 {
     json_object *value_obj = db_get(key);
     if (value_obj)
     {
-        const char *value_str = json_object_to_json_string(value_obj); // Convert JSON object to string
+        const char *value_str = json_object_to_json_string(value_obj);
         send(client_socket, value_str, strlen(value_str), 0);
-        send(client_socket, "\n", 1, 0); // Optional: send newline character for better formatting
+        send(client_socket, "\n", 1, 0);
         log_info("GET command successful for key: %s and value: %s", key, value_str);
     }
     else
@@ -126,6 +134,7 @@ void handle_get_command(int client_socket, const char *key)
     }
 }
 
+// Handle DEL command
 void handle_del_command(int client_socket, const char *key)
 {
     if (db_delete(key) == 0)
@@ -140,6 +149,7 @@ void handle_del_command(int client_socket, const char *key)
     }
 }
 
+// Handle client connection and process commands
 void handle_client(int client_socket)
 {
     char buffer[BUFFER_SIZE];
@@ -147,10 +157,10 @@ void handle_client(int client_socket)
 
     if (bytes_received > 0)
     {
-        buffer[bytes_received] = '\0'; // Null terminate the string
+        buffer[bytes_received] = '\0';
         log_info("Received data: %s\n", buffer);
 
-        // Parse JSON
+        // Parse JSON command
         struct json_object *parsed_json;
         struct json_object *key_obj;
         struct json_object *operation_obj;
@@ -165,9 +175,9 @@ void handle_client(int client_socket)
             return;
         }
 
+        // Extract command components
         json_object_object_get_ex(parsed_json, "key", &key_obj);
         json_object_object_get_ex(parsed_json, "operation", &operation_obj);
-        json_object_object_get_ex(parsed_json, "value", &value_obj);
 
         const char *key_str = json_object_get_string(key_obj);
         const char *op_str = json_object_get_string(operation_obj);
@@ -181,7 +191,7 @@ void handle_client(int client_socket)
             return;
         }
 
-        // Handle operation
+        // Process the command
         if (strcmp(op_str, "GET") == 0)
         {
             handle_get_command(client_socket, key_str);
@@ -192,7 +202,6 @@ void handle_client(int client_socket)
         }
         else if (strcmp(op_str, "SET") == 0)
         {
-
             json_object_object_get_ex(parsed_json, "value", &value_obj);
             const char *value_str = json_object_get_string(value_obj);
             handle_set_command(client_socket, key_str, value_str);
@@ -212,6 +221,7 @@ void handle_client(int client_socket)
     close(client_socket);
 }
 
+// Main loop to accept and handle client connections
 void accept_connections()
 {
     struct sockaddr_in client_addr;
@@ -220,7 +230,6 @@ void accept_connections()
 
     while (1)
     {
-        // Break the loop if server_socket is invalid
         if (server_socket < 0)
         {
             log_error("Invalid server_socket. Connections cannot be accepted.");
