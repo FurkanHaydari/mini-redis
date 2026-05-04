@@ -108,5 +108,5 @@ Pull requests are welcome! If you want to optimize the AVL rotations or add mult
 
 <div align="center">
   <i>Developed by <b>Furkan Haydari</b></i> <br>
-  <a href="https://www.linkedin.com/in/furkan-haydari/">LinkedIn</a> • <a href="mailto:furkanhydri@gmail.com">Email</a> • <a href="https://github.com/FurkanHaydari">GitHub</a>
+  <a href="https://www.linkedin.com/in/furkanhaydari/">LinkedIn</a> • <a href="mailto:nomorerotting@gmail.com">Email</a> • <a href="https://github.com/FurkanHaydari">GitHub</a>
 </div>
