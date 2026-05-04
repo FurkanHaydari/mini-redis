@@ -1,127 +1,112 @@
-# Mini Redis
+<div align="center">
+  
+# ⚡ Mini Redis
+  
+**A high-performance, in-memory database engine written entirely in C.**
 
-## Overview
+[![C](https://img.shields.io/badge/C-00599C?style=for-the-badge&logo=c&logoColor=white)](https://en.cppreference.com/w/c)
+[![Python Client](https://img.shields.io/badge/Python_Client-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![Docker](https://img.shields.io/badge/Docker_Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.style=for-the-badge)](https://opensource.org/licenses/MIT)
 
-This project is a simple in-memory database similar to Redis, implemented in C. It is designed to help you enhance your skills in C programming, socket programming, and network communication. The project includes basic database operations such as CRUD (Create, Read, Update, Delete). It also features a simple Redis client written in Python to interact with the C-based Redis server.
+</div>
 
-## Features
+## 📖 Overview
 
-- **In-Memory Database**: Implements a simple in-memory database with basic CRUD operations.
-- **AVL Tree Structure**: Utilizes an AVL tree structure for data storage, ensuring balanced and fast data access.
-- **Socket Programming**: Employs TCP/IP sockets for data exchange between the server and client.
-- **Client Implementation**: A simple Redis client is implemented in Python for testing data operations.
-- **Logging**: Efficient logging using syslog or console logging, with a circular buffer for server log management.
-- **Fault Tolerance Testing**: Tests for server stability and fault tolerance.
-- **Performance Testing**: Measures performance and memory usage.
+**Mini Redis** is a custom implementation of an in-memory database, engineered from the ground up in C. Designed to demonstrate low-level systems programming, custom memory management, and TCP/IP network socket communication. 
 
-## Setup and Usage
+This project explores the fundamental mechanics behind modern caching systems by implementing core database operations (CRUD), employing AVL trees for guaranteed *O(log n)* time complexities, and handling client-server network protocols autonomously without relying on high-level external frameworks.
 
-### Using Docker (Recommended)
+---
 
-1. **Build the Docker image:**
+## 🚀 Key Architectural Features
 
+- **🧠 In-Memory Storage Engine**: Blazing-fast state retention utilizing heavily optimized manual memory allocations.
+- **🌳 AVL Tree Indexing**: Ensures that all search, insert, and delete operations strictly adhere to *O(log n)* time complexities through automatic self-balancing tree rotations.
+- **🌐 Custom Socket Networking**: Implements raw TCP/IP sockets for robust client-server architecture.
+- **🐍 Lightweight Python Client**: Includes a custom protocol wrapper written in Python for effortless database integration and testing.
+- **🛡️ Fault Tolerance & Memory Safety**: Architected to mitigate memory leaks with rigorous Valgrind-tested allocations and graceful crash-handling policies.
+- **📝 High-Performance Logging**: Employs an intelligent circular-buffer logging strategy (syslog and console modes) for bottleneck-free analytics.
+
+---
+
+## 🛠️ Setup and Usage
+
+### 🐳 The Docker Way (Recommended)
+
+1. **Build the container:**
    ```bash
    make docker-build
    ```
-
-2. **Run tests in Docker:**
-
+2. **Run integration tests inside isolated container:**
    ```bash
    make docker-test
    ```
-
-3. **Run the server in Docker:**
+3. **Spin up the server:**
    ```bash
    docker run -p 45234:45234 mini-redis
    ```
 
-### Manual Setup
+### 💻 The Manual Way (Bare-metal)
 
-1. **Compile the Server:**
-
+1. **Compile via Make:**
    ```bash
    make
    ```
-
 2. **Run the Server:**
-
    ```bash
    ./mini-redis [-p port] [-i] [-s]
    ```
+   * `-p port`: Specify network port (default: `45234`)
+   * `-i`: Enable `INFO` logging verbosity (default: `ERROR`)
+   * `-s`: Bind to `syslog` instead of standard console output.
 
-   - `-p port`: Specify the port number (default is 45234)
-   - `-i`: Set log level to INFO (default is ERROR)
-   - `-s`: Use syslog for logging (default is console logging)
-
-3. **Run Tests:**
-
+3. **Run Unit Tests & Cleanup:**
    ```bash
    make test
-   ```
-
-4. **Clean Build Artifacts:**
-   ```bash
    make clean
    ```
 
-## API Usage
+---
 
-The server accepts JSON-formatted commands. Here are the basic operations:
+## 🔌 API & Protocol
 
-### SET
+The server communicates via standard JSON payloads over TCP.
 
-Adds a key-value pair to the database.
+| Operation | Command Example | Description |
+| :--- | :--- | :--- |
+| **SET** | `{"operation": "SET", "key": "mykey", "value": "myvalue"}` | Inserts or updates a key-value pair. |
+| **GET** | `{"operation": "GET", "key": "mykey"}` | Retrieves the value bound to the key. |
+| **DEL** | `{"operation": "DEL", "key": "mykey"}` | Removes the key and frees memory. |
 
-```json
-{"key": "mykey", "operation": "SET", "value": "myvalue"}
-```
+---
 
-### GET
+## 🧪 Testing & Validation
 
-Retrieves the value of a specific key from the database.
+To guarantee memory safety and architectural integrity, the project is equipped with a rigorous test suite:
+- **Tree Integrity:** Validates strict AVL height rules and rebalancing (Left-Left, Right-Right, Left-Right, Right-Left).
+- **Leak Detection:** Monitors dangling pointers during rapid CRUD cycles.
+- **Fault Tolerance:** Randomizes socket closures and invalid payloads to ensure the main thread never crashes.
 
-```json
-{"key": "mykey", "operation": "GET"}
-```
-
-### DEL
-
-Deletes a specific key from the database.
-
-```json
-{"key": "mykey", "operation": "DEL"}
-```
-
-## Testing
-
-The project includes various tests:
-
-- Basic CRUD operations
-- AVL tree resizing and data integrity
-- Memory leak detection
-- Performance measurement
-- Fault tolerance
-- Randomized operations
-
-Tests are automatically run in a Docker container to ensure a consistent environment and prevent system interference. You can run the tests using:
-
+Run the test suite safely via Docker:
 ```bash
 make docker-test
 ```
 
-## Advanced Topics
+---
 
-- **SQL Parser**: Future plans include implementing an SQL parser and exploring Abstract Syntax Tree (AST) for query processing.
-- **Synchronization Mechanisms**: Plans to explore synchronization mechanisms and PostgreSQL for advanced database functionalities.
+## 🔮 Roadmap & Advanced Topics
 
-## Contributions
+- **[ ] SQL Parser:** Implementation of Abstract Syntax Trees (AST) for relational-style complex queries.
+- **[ ] Concurrency:** Migrating the event loop to `epoll` or `kqueue` for high-concurrency non-blocking I/O.
+- **[ ] Disk Persistence:** AOF (Append Only File) logging for crash recovery.
 
-Contributions are welcome. Please feel free to submit a Pull Request.
+---
 
-## License
+## 🤝 Contributions
+Pull requests are welcome! If you want to optimize the AVL rotations or add multi-threading, feel free to submit a PR.
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Contact
-
-Furkan Haydari - [LinkedIn](https://www.linkedin.com/in/furkan-haydari/) - [Email](mailto:furkanhydri@gmail.com)
+<div align="center">
+  <i>Developed by <b>Furkan Haydari</b></i> <br>
+  <a href="https://www.linkedin.com/in/furkan-haydari/">LinkedIn</a> • <a href="mailto:furkanhydri@gmail.com">Email</a> • <a href="https://github.com/FurkanHaydari">GitHub</a>
+</div>
